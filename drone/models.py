@@ -1,7 +1,9 @@
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from drone.validators import zipusa
-from django.utils.timezone import now
+from datetime import timedelta, datetime
+import pytz
+utc = pytz.UTC
 
 
 class Drone(models.Model):
@@ -102,12 +104,13 @@ class Customer(models.Model):
         max_length=5,
         validators=[
             RegexValidator(
-                r"^[0-9]*$", "Only allowed 33186, 33015, " +
+                r"^[0-9]*$", "Only allowed digits and zips like 33186, 33015, " +
                 "33157, 33033, 33142, 33125, 33177 check zipcode in validators"
             ),
             zipusa
         ],
-        help_text="Only zip codes of Miami Dade run zipcodes in api"
+        help_text="Only zip codes of Miami Dade run zipcodes in api 33186, 33015, " +
+        "33157, 33033, 33142, 33125, 33177"
     )
 
 
@@ -126,20 +129,8 @@ class Entity(models.Model):
         ],
         help_text="Only zip codes of US"
     )
-    medications = models.ForeignKey(
-        Medication,
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-        help_text="one to many Medications"
-    )
-    drones = models.ForeignKey(
-        Drone,
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-        help_text="one to many Medications"
-    )
+    medications = models.ManyToManyField(Medication)
+    drones = models.ManyToManyField(Drone)
 
     def __str__(self) -> str:
         return "id({id})-zipcode({z})".format(
@@ -154,25 +145,17 @@ class Shipping(models.Model):
         ('Delivering', 'Delivering'),
         ('Returning', 'Returning')
     )
-    medications = models.ForeignKey(
-        Medication,
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-        help_text="one to many Medications"
-    )
-    drones = models.ForeignKey(
-        Drone,
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-        help_text="one to many Drone"
-    )
+    medications = models.ManyToManyField(Medication)
+    drones = models.ManyToManyField(Drone)
     state = models.CharField(
         max_length=13,
         choices=DRONE_STATE_CHOICES,
-        default='Lightweight',
+        default='Loading',
         help_text="Drones state"
+    )
+    help_mode = models.BooleanField(
+        default=False,
+        help_text="If load medication to heavy"
     )
     start_date = models.DateTimeField(
         help_text="Date Start Shipping"
@@ -186,25 +169,15 @@ class Delivery(models.Model):
     DELIVERY_STATE_CHOICES = (
         ('Processing', 'Processing'),
         ('Processed', 'Processed'),
-        ('Success', 'Success'),
-        ('Error', 'Error'),
+        ('Delivered', 'Delivered'),
+        ('Complete', 'Complete')
     )
     entity = models.OneToOneField(
         Entity, on_delete=models.CASCADE, help_text="Entity to belong")
     customer = models.OneToOneField(
         Customer, on_delete=models.CASCADE, help_text="Customer to belong")
-    medications = models.ForeignKey(
-        Medication,
-        on_delete=models.CASCADE,
-        help_text="one to many Medications"
-    )
-    shippings = models.ForeignKey(
-        Shipping,
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-        help_text="one to many Shipping"
-    )
+    medications = models.ManyToManyField(Medication)
+    shippings = models.ManyToManyField(Shipping)
     state = models.CharField(
         max_length=13,
         choices=DELIVERY_STATE_CHOICES,
@@ -212,7 +185,7 @@ class Delivery(models.Model):
         help_text="Delivery State Choices default='Processing'"
     )
     start_date = models.DateTimeField(
-        default=now,
+        default=utc.localize(datetime.now()),
         help_text="Date Start Delivery",
         blank=True,
         null=True

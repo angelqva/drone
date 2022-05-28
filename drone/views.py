@@ -1,8 +1,9 @@
 from rest_framework import viewsets, mixins
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser
-from api.views import NestedSerializerMixin, NestedGenericMixin
+from api.views import NestedSerializerMixin
 from drone.serializers import *
+from rest_framework.response import Response
 
 
 class DroneView(viewsets.ModelViewSet):
@@ -31,11 +32,21 @@ class EntityView(NestedSerializerMixin):
     permission_classes = (IsAuthenticated,)
 
 
-class DeliveryView(NestedGenericMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin):
+class DeliveryView(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin):
     queryset = Delivery.objects.all()
     serializer_class = DeliverySerializer
-    read_serializer_class = DeliveryReadSerializer
     permission_classes = (IsAuthenticated,)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = DeliveryReadSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = DeliveryReadSerializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class ShippingView(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.RetrieveModelMixin):
