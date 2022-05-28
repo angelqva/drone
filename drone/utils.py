@@ -59,45 +59,46 @@ def create_shipping(
     print("distance -> ", distance)
     print("delivery -> ", delivery)
     print("==END CREATE SHIPPING==")
-    # duration_task = calc_duration_task(drones[0], distance)
-    # start_loading = utc.localize(datetime.now())
-    # end_loading = start_loading+timedelta(seconds=60)
-    # start_delivering = end_loading
-    # end_delivering = start_delivering+timedelta(seconds=duration_task)
-    # start_returning = end_delivering
-    # end_returning = end_delivering+timedelta(seconds=duration_task)
-    # help_mode = len(drones) > 1
+    duration_task = calc_duration_task(drones[0], distance)
+    start_loading = utc.localize(datetime.now())
+    end_loading = start_loading+timedelta(seconds=60)
+    start_delivering = end_loading
+    end_delivering = start_delivering+timedelta(seconds=duration_task)
+    start_returning = end_delivering
+    end_returning = end_delivering+timedelta(seconds=duration_task)
+    help_mode = len(drones) > 1
 
-    # t1 = Shipping.objects.create(
-    #     drones=drones,
-    #     medication=medications,
-    #     task="Loading",
-    #     help_mode=help_mode,
-    #     start_date=start_loading,
-    #     end_date=end_loading
-    # )
-    # instance_t1 = t1.save()
-    # t2 = Shipping.objects.create(
-    #     drones=drones,
-    #     medication=medications,
-    #     task="Delivering",
-    #     help_mode=help_mode,
-    #     start_date=start_delivering,
-    #     end_date=end_delivering
-    # )
-    # instance_t2 = t2.save()
-    # t3 = Shipping.objects.create(
-    #     drones=drones,
-    #     medication=medications,
-    #     task="Returning",
-    #     help_mode=help_mode,
-    #     start_date=start_returning,
-    #     end_date=end_returning
-    # )
-    # instance_t3 = t3.save()
-    # delivery.shippings.add(instance_t1)
-    # delivery.shippings.add(instance_t2)
-    # delivery.shippings.add(instance_t3)
+    t1 = Shipping.objects.create(
+        state="Loading",
+        help_mode=help_mode,
+        start_date=start_loading,
+        end_date=end_loading
+    )
+    t1.drones.add(*drones)
+    t1.medications.add(*medications)
+    t1.save()
+    t2 = Shipping.objects.create(
+        state="Delivering",
+        help_mode=help_mode,
+        start_date=start_delivering,
+        end_date=end_delivering
+    )
+    t2.drones.add(*drones)
+    t2.medications.add(*medications)
+    t2.save()
+    t3 = Shipping.objects.create(
+        state="Returning",
+        help_mode=help_mode,
+        start_date=start_returning,
+        end_date=end_returning
+    )
+    t3.drones.add(*drones)
+    t3.save()
+    print(t1, t2, t3)
+    delivery.shippings.add(t1)
+    delivery.shippings.add(t2)
+    delivery.shippings.add(t3)
+    print(delivery.shippings.all())
 
 
 def make_ship_drone(drones: List[Drone], medications: List[Medication],
@@ -206,6 +207,7 @@ def make_ship_drone(drones: List[Drone], medications: List[Medication],
                 if len(medications_to_drone) > 0:
                     for med in medications_to_drone:
                         medications_light.remove(med)
+
                     print("Send Create Tasks")
                     create_shipping(
                         [drone], medications_to_drone, distance, delivery)
@@ -221,30 +223,36 @@ def processing_entity_delivery(entity: Entity):
     query_delivery = Delivery.objects.filter(
         entity=entity, end_date=None).order_by('start_date')
     if query_delivery.count() > 0:
-        delivery = query_delivery.first()
+        delivery: Delivery = query_delivery.first()
         z1 = entity.zip_code
         z2 = delivery.customer.zip_code
         distance = get_distance(z1, z2)
         medications_to_processed: List[Medication] = list(
             delivery.medications.all())
         shippings = list(delivery.shippings.filter(state='Loading'))
-        medications_processed: List[Medication] = []
+        print('medications_to_processed ', medications_to_processed)
         for ship in shippings:
-            medications_processed += list(ship.medications.all())
-        for med in medications_to_processed:
-            if med in medications_processed:
-                medications_to_processed.remove(med)
-
+            meds = list(ship.medications.all())
+            for m in meds:
+                medications_to_processed.remove(m)
         if len(medications_to_processed) > 0:
             inactives = get_entity_drones_can_dispatch(entity, distance)
-            make_ship_drone(inactives, medications_to_processed, delivery, distance)
+            make_ship_drone(inactives, medications_to_processed,
+                            delivery, distance)
         else:
-            shipping = delivery.shippings.filter(
-                state='Returning', end_date__gt=now).order_by('end_date').last()
-            if shippings is not None:
+            if delivery.state == 'Processing':
                 delivery.state = 'Processed'
-                delivery.end_date = shipping.end_date
                 delivery.save()
             else:
-                delivery.state = 'Complete'
-                delivery.save()
+                print('Delivery', delivery.shippings.all())
+                shipping = delivery.shippings.filter(
+                    state='Returning', end_date__gt=utc.localize(datetime.now())).order_by('end_date').last()
+                if shipping is not None:
+                    print(shipping)
+                    delivery.state = 'Processed'
+                    delivery.end_date = shipping.end_date
+                    delivery.save()
+                else:
+                    delivery.state = 'Complete'
+                    delivery.save()
+            print(delivery.state)
