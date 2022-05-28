@@ -78,7 +78,7 @@ class DeliverySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Delivery
-        fields = 'entity, customer, medications'
+        fields = ('entity', 'customer', 'medications')
         depth = 1
 
     def create(self, validated_data):
