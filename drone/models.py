@@ -88,6 +88,66 @@ class Medication(models.Model):
         )
 
 
+class Customer(models.Model):
+    fullname = models.CharField(
+        max_length=255,
+        help_text="Enter your fullname"
+    )
+    email = models.EmailField(
+        unique=True,
+        blank=False,
+        help_text="Enter your email:example@domain.com"
+    )
+    zip_code = models.CharField(
+        max_length=5,
+        validators=[
+            RegexValidator(
+                r"^[0-9]*$", "Only allowed 33186, 33015, " +
+                "33157, 33033, 33142, 33125, 33177 check zipcode in validators"
+            ),
+            zipusa
+        ],
+        help_text="Only zip codes of Miami Dade run zipcodes in api"
+    )
+
+
+class Entity(models.Model):
+    name = models.CharField(
+        max_length=255,
+        help_text="Entity Name"
+    )
+    zip_code = models.CharField(
+        max_length=5,
+        validators=[
+            RegexValidator(
+                r"^[0-9]*$", "Only allowed digits"
+            ),
+            zipusa
+        ],
+        help_text="Only zip codes of US"
+    )
+    medications = models.ForeignKey(
+        Medication,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        help_text="one to many Medications"
+    )
+    drones = models.ForeignKey(
+        Drone,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        help_text="one to many Medications"
+    )
+
+    def __str__(self) -> str:
+        return "id({id})-zipcode({z})".format(
+            id=self.pk,
+            z=self.zip_code
+        )
+
+
 class Shipping(models.Model):
     DRONE_STATE_CHOICES = (
         ('Loading', 'Loading'),
@@ -123,11 +183,19 @@ class Shipping(models.Model):
 
 
 class Delivery(models.Model):
+    DELIVERY_STATE_CHOICES = (
+        ('Processing', 'Processing'),
+        ('Processed', 'Processed'),
+        ('Success', 'Success'),
+        ('Error', 'Error'),
+    )
+    entity = models.OneToOneField(
+        Entity, on_delete=models.CASCADE, help_text="Entity to belong")
+    customer = models.OneToOneField(
+        Customer, on_delete=models.CASCADE, help_text="Customer to belong")
     medications = models.ForeignKey(
         Medication,
         on_delete=models.CASCADE,
-        blank=True,
-        null=True,
         help_text="one to many Medications"
     )
     shippings = models.ForeignKey(
@@ -136,6 +204,12 @@ class Delivery(models.Model):
         blank=True,
         null=True,
         help_text="one to many Shipping"
+    )
+    state = models.CharField(
+        max_length=13,
+        choices=DELIVERY_STATE_CHOICES,
+        default='Processing',
+        help_text="Delivery State Choices default='Processing'"
     )
     start_date = models.DateTimeField(
         default=now,
@@ -148,79 +222,3 @@ class Delivery(models.Model):
         blank=True,
         null=True
     )
-
-
-class Customer(models.Model):
-    fullname = models.CharField(
-        max_length=255,
-        help_text="Enter your fullname"
-    )
-    email = models.EmailField(
-        unique=True,
-        blank=False,
-        help_text="Enter your email:example@domain.com"
-    )
-    zip_code = models.CharField(
-        max_length=5,
-        validators=[
-            RegexValidator(
-                r"^[0-9]*$", "Only allowed 33186, 33015, " +
-                "33157, 33033, 33142, 33125, 33177 check zipcode in validators"
-            ),
-            zipusa
-        ],
-        help_text="Only zip codes of Miami Dade run zipcodes in api"
-    )
-    deliverys = models.ForeignKey(
-        Delivery,
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-        help_text="one to many"
-    )
-
-
-class Entity(models.Model):
-    name = models.CharField(
-        max_length=255,
-        help_text="Entity Name"
-    )
-    zip_code = models.CharField(
-        max_length=5,
-        validators=[
-            RegexValidator(
-                r"^[0-9]*$", "Only allowed digits"
-            ),
-            zipusa
-        ],
-        help_text="Only zip codes of US"
-    )
-
-    medications = models.ForeignKey(
-        Medication,
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-        help_text="one to many Medications"
-    )
-    drones = models.ForeignKey(
-        Drone,
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-        help_text="one to many Medications"
-    )
-
-    deliverys = models.ForeignKey(
-        Delivery,
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-        help_text="one to many Medications"
-    )
-
-    def __str__(self) -> str:
-        return "id({id})-zipcode({z})".format(
-            id=self.pk,
-            z=self.zip_code
-        )
