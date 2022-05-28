@@ -32,7 +32,7 @@ class EntityView(NestedSerializerMixin):
     permission_classes = (IsAuthenticated,)
 
 
-class DeliveryView(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin):
+class DeliveryView(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin):
     queryset = Delivery.objects.all()
     serializer_class = DeliverySerializer
     permission_classes = (IsAuthenticated,)
@@ -49,7 +49,7 @@ class DeliveryView(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.Retrie
         return Response(serializer.data)
 
 
-class ShippingView(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.RetrieveModelMixin):
+class ShippingView(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.DestroyModelMixin):
     queryset = Shipping.objects.all()
     serializer_class = ShippingReadSerializer
     permission_classes = (IsAuthenticated,)
