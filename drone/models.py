@@ -170,7 +170,7 @@ class Delivery(models.Model):
         ('Processing', 'Processing'),
         ('Processed', 'Processed'),
         ('Delivered', 'Delivered'),
-        ('Complete', 'Complete')
+        ('Finish', 'Finish')
     )
     entity = models.OneToOneField(
         Entity, on_delete=models.CASCADE, help_text="Entity to belong")

@@ -16,9 +16,13 @@ def get_shippings(drone: Drone) -> List[Shipping] | None:
 
 
 def calc_can_do_distance(drone: Drone, distance) -> bool:
-    battery = drone.battery
     stats = stats_dm[drone.model]
-    if battery >= 2*distance*stats['battery_loss']:
+    time = (2*distance*1000/stats['spedd'])+stats['loading']
+    time_down = utc.localize(datetime.now())
+    time_up = time_down+timedelta(seconds=time)
+    battery = loss_battery(
+        time_up, time_down, stats['battery_loss'], drone.battery)
+    if battery >= 0:
         return True
     return False
 
@@ -53,12 +57,6 @@ def create_shipping(
         medications: List[Medication],
         distance: float,
         delivery: Delivery):
-    print("====CREATE SHIPPING====")
-    print("Drones -> ", drones)
-    print("medications -> ", medications)
-    print("distance -> ", distance)
-    print("delivery -> ", delivery)
-    print("==END CREATE SHIPPING==")
     duration_task = calc_duration_task(drones[0], distance)
     start_loading = utc.localize(datetime.now())
     end_loading = start_loading+timedelta(seconds=60)
@@ -218,6 +216,8 @@ def get_distance(z1, z2):
     data = json.load(data_json_file)
     return data[str(z1)+","+str(z2)]
 
+# task
+
 
 def processing_entity_delivery(entity: Entity):
     query_delivery = Delivery.objects.filter(
@@ -253,6 +253,111 @@ def processing_entity_delivery(entity: Entity):
                     delivery.end_date = shipping.end_date
                     delivery.save()
                 else:
-                    delivery.state = 'Complete'
+                    delivery.state = 'Finish'
                     delivery.save()
             print(delivery.state)
+
+# task
+
+
+def update_battery_entity_10_sec(entity: Entity):
+    drones: List[Drone] = list(entity.drones.all())
+    for drone in drones:
+        time_now = utc.localize(datetime.now())
+        time_prev = utc.localize(datetime.now()) - timedelta(seconds=10)
+        drone_set_charge(drone, time_prev, time_now)
+
+
+def drone_set_charge(drone: Drone, time_prev: datetime, time_now: datetime):
+    battery = drone.battery
+    model = drone.model
+    stats = stats_dm[model]
+    ships = list(drone.shipping_set.filter(
+        end_date__gt=time_prev, start_date__lt=time_now).order_by('-start_date'))
+    if len(ships) > 0:
+        time_up = time_now
+        time_down = time_prev
+        while len(ships) > 0:
+            ship: Shipping = ships.pop()
+            if len(ships) > 0:
+                battery = calc_battery(
+                    ship, time_down, ship.end_date, model, battery)
+                time_down = ship.end_date
+            else:
+                battery = calc_battery(
+                    ship, time_down, time_up, model, battery)
+            drone.battery = battery
+            drone.save()
+
+    else:
+        if battery < 100:
+            drone.battery = charge_battery(
+                time_prev, time_now, stats['battery_charge'], battery)
+            drone.save()
+        else:
+            drone.battery = 100
+            drone.save()
+
+
+def calc_battery(ship: Shipping, time_down, time_up, model, battery):
+    stats = stats_dm[model]
+    if ship.start_date > time_down:
+        battery = charge_battery(
+            ship.start_date, time_down, stats['battery_charge'], battery)
+    if time_up <= ship.end_date:
+        battery = loss_battery(
+            time_up, time_down, stats['battery_loss'], battery)
+    else:
+        battery = loss_battery(ship.end_date, time_down,
+                               stats['battery_loss'], battery)
+        battery = charge_battery(
+            time_up, ship.end_date, stats['battery_charge'], battery)
+    return battery
+
+
+def charge_battery(time_up, time_down, battery_charge, battery):
+    charge_time = (time_up - time_down).total_seconds()
+    if battery+(charge_time*battery_charge) > 100:
+        battery = 100
+    else:
+        battery = battery+(charge_time*battery_charge)
+    return battery
+
+
+def loss_battery(time_up, time_down, battery_loss, battery):
+    charge_time = (time_up - time_down).total_seconds()
+    return battery-(charge_time*battery_loss)
+
+# task
+
+
+def change_states_drone_entity(entity: Entity):
+    drones: List[Drone] = list(entity.drones.all())
+    deliverys: List[Delivery] = list(Delivery.objects.filter(entity=entity))
+    for drone in drones:
+        change_drone_state(drone)
+    for delivery in deliverys:
+        change_delivery_state(delivery)
+
+
+def change_drone_state(drone: Drone):
+    time_now = utc.localize(datetime.now())
+    ship: Shipping = drone.shipping_set.filter(
+        end_date__lte=time_now, start_date__gte=time_now).order_by('-start_date').first()
+    if ship is not None:
+        drone.state = ship.state
+        drone.save()
+    else:
+        drone.state = 'Idle'
+
+
+def change_delivery_state(delivery: Delivery):
+    time_now = utc.localize(datetime.now())
+    if delivery.end_date is not None:
+        if delivery.end_date >= time_now:
+            delivery.state = 'Finish'
+        else:
+            last_ship: Shipping = delivery.shippings.filter(
+                state='Delivering').order_by('start_date').last()
+            if time_now > last_ship.end_date:
+                delivery.state = 'Delivered'
