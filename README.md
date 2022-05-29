@@ -50,6 +50,8 @@ Password (again): Password\*2022
 python example.py
 ```
 
+![alt text](https://github.com/angelqva/drone/blob/main/media/dash-02.jpg?raw=true)
+
 ## License
 
 [MIT](https://choosealicense.com/licenses/mit/)
