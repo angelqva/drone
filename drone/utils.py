@@ -3,13 +3,14 @@ import json
 from drone.models import *
 from typing import List
 from datetime import timedelta, datetime
+from django.utils import timezone
 import pytz
 utc = pytz.UTC
 
 
 def get_shippings(drone: Drone) -> List[Shipping] | None:
     ships: List[Shipping] = list(drone.shipping_set.filter(
-        end_date__gt=utc.localize(datetime.now())))
+        end_date__gt=timezone.now()))
     if len(ships) > 0:
         return ships
     return None
@@ -17,8 +18,8 @@ def get_shippings(drone: Drone) -> List[Shipping] | None:
 
 def calc_can_do_distance(drone: Drone, distance) -> bool:
     stats = stats_dm[drone.model]
-    time = (2*distance*1000/stats['spedd'])+stats['loading']
-    time_down = utc.localize(datetime.now())
+    time = (2*distance*1000/stats['speed'])+stats['loading']
+    time_down = timezone.now()
     time_up = time_down+timedelta(seconds=time)
     battery = loss_battery(
         time_up, time_down, stats['battery_loss'], drone.battery)
@@ -58,7 +59,7 @@ def create_shipping(
         distance: float,
         delivery: Delivery):
     duration_task = calc_duration_task(drones[0], distance)
-    start_loading = utc.localize(datetime.now())
+    start_loading = timezone.now()
     end_loading = start_loading+timedelta(seconds=60)
     start_delivering = end_loading
     end_delivering = start_delivering+timedelta(seconds=duration_task)
@@ -216,57 +217,6 @@ def get_distance(z1, z2):
     data = json.load(data_json_file)
     return data[str(z1)+","+str(z2)]
 
-# task
-
-
-def processing_entity_delivery(entity: Entity):
-    query_delivery = Delivery.objects.filter(
-        entity=entity, end_date=None).order_by('start_date')
-    if query_delivery.count() > 0:
-        delivery: Delivery = query_delivery.first()
-        z1 = entity.zip_code
-        z2 = delivery.customer.zip_code
-        distance = get_distance(z1, z2)
-        medications_to_processed: List[Medication] = list(
-            delivery.medications.all())
-        shippings = list(delivery.shippings.filter(state='Loading'))
-        print('medications_to_processed ', medications_to_processed)
-        for ship in shippings:
-            meds = list(ship.medications.all())
-            for m in meds:
-                medications_to_processed.remove(m)
-        if len(medications_to_processed) > 0:
-            inactives = get_entity_drones_can_dispatch(entity, distance)
-            make_ship_drone(inactives, medications_to_processed,
-                            delivery, distance)
-        else:
-            if delivery.state == 'Processing':
-                delivery.state = 'Processed'
-                delivery.save()
-            else:
-                print('Delivery', delivery.shippings.all())
-                shipping = delivery.shippings.filter(
-                    state='Returning', end_date__gt=utc.localize(datetime.now())).order_by('end_date').last()
-                if shipping is not None:
-                    print(shipping)
-                    delivery.state = 'Processed'
-                    delivery.end_date = shipping.end_date
-                    delivery.save()
-                else:
-                    delivery.state = 'Finish'
-                    delivery.save()
-            print(delivery.state)
-
-# task
-
-
-def update_battery_entity_10_sec(entity: Entity):
-    drones: List[Drone] = list(entity.drones.all())
-    for drone in drones:
-        time_now = utc.localize(datetime.now())
-        time_prev = utc.localize(datetime.now()) - timedelta(seconds=10)
-        drone_set_charge(drone, time_prev, time_now)
-
 
 def drone_set_charge(drone: Drone, time_prev: datetime, time_now: datetime):
     battery = drone.battery
@@ -292,7 +242,7 @@ def drone_set_charge(drone: Drone, time_prev: datetime, time_now: datetime):
     else:
         if battery < 100:
             drone.battery = charge_battery(
-                time_prev, time_now, stats['battery_charge'], battery)
+                time_now, time_prev, stats['battery_charge'], battery)
             drone.save()
         else:
             drone.battery = 100
@@ -331,28 +281,23 @@ def loss_battery(time_up, time_down, battery_loss, battery):
 # task
 
 
-def change_states_drone_entity(entity: Entity):
-    drones: List[Drone] = list(entity.drones.all())
-    deliverys: List[Delivery] = list(Delivery.objects.filter(entity=entity))
-    for drone in drones:
-        change_drone_state(drone)
-    for delivery in deliverys:
-        change_delivery_state(delivery)
-
-
 def change_drone_state(drone: Drone):
-    time_now = utc.localize(datetime.now())
-    ship: Shipping = drone.shipping_set.filter(
-        end_date__lte=time_now, start_date__gte=time_now).order_by('-start_date').first()
-    if ship is not None:
-        drone.state = ship.state
-        drone.save()
+    time_now = timezone.now()
+    ships: List[Shipping] = list(Shipping.objects.filter(
+        end_date__gte=time_now, start_date__lte=time_now))
+    if len(ships):
+        for ship in ships:
+            drones = list(ship.drones.all())
+            if drone in drones:
+                drone.state = ship.state
+                drone.save()
     else:
         drone.state = 'Idle'
+        drone.save()
 
 
 def change_delivery_state(delivery: Delivery):
-    time_now = utc.localize(datetime.now())
+    time_now = timezone.now()
     if delivery.end_date is not None:
         if delivery.end_date >= time_now:
             delivery.state = 'Finish'

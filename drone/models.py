@@ -1,9 +1,7 @@
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from drone.validators import zipusa
-from datetime import timedelta, datetime
-import pytz
-utc = pytz.UTC
+from django.utils import timezone
 
 
 class Drone(models.Model):
@@ -172,9 +170,9 @@ class Delivery(models.Model):
         ('Delivered', 'Delivered'),
         ('Finish', 'Finish')
     )
-    entity = models.OneToOneField(
+    entity = models.ForeignKey(
         Entity, on_delete=models.CASCADE, help_text="Entity to belong")
-    customer = models.OneToOneField(
+    customer = models.ForeignKey(
         Customer, on_delete=models.CASCADE, help_text="Customer to belong")
     medications = models.ManyToManyField(Medication)
     shippings = models.ManyToManyField(Shipping)
@@ -185,7 +183,7 @@ class Delivery(models.Model):
         help_text="Delivery State Choices default='Processing'"
     )
     start_date = models.DateTimeField(
-        default=utc.localize(datetime.now()),
+        auto_now_add=True,
         help_text="Date Start Delivery",
         blank=True,
         null=True
