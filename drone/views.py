@@ -1,15 +1,40 @@
-from rest_framework import viewsets, mixins
+from rest_framework import viewsets, mixins, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from api.views import NestedSerializerMixin
 from drone.serializers import *
 from rest_framework.response import Response
+from rest_framework.decorators import action
 
 
 class DroneView(viewsets.ModelViewSet):
     serializer_class = DroneSerializer
     permission_classes = (IsAuthenticated,)
     queryset = Drone.objects.all()
+
+    @action(detail=True, methods=["get"])
+    def check_cargo(self):
+        drone: Drone = self.get_object()
+        time_now = timezone.now()
+        ship: Shipping = drone.shipping_set.filter(
+            end_date__gte=time_now, start_date__lte=time_now).first()
+        result = {
+            "drone": (DroneSerializer(drone)).data,
+            "medications": False,
+            "helping to charge": False
+        }
+        if ship is not None:
+            if ship.drones.count() > 1:
+                result["drones"] = list(ship.drones.all())
+                result["medications"] = list(ship.medications.all())
+                result["helping to charge"] = True
+            else:
+                result["drones"] = (DroneSerializer(ship.drones.first())).data
+                result["medications"] = (MedicationSerializer(
+                    ship.medications.all(), many=True)).data
+                result["helping to charge"] = True
+
+        return Response(result, status=status.HTTP_200_OK)
 
 
 class CustomerView(viewsets.ModelViewSet):
