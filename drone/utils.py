@@ -283,11 +283,11 @@ def loss_battery(time_up, time_down, battery_loss, battery):
 
 def change_drone_state(drone: Drone):
     time_now = timezone.now()
-    ships: List[Shipping] = list(Shipping.objects.filter(
-        end_date__gte=time_now, start_date__lte=time_now))
-    if len(ships):
-        for ship in ships:
-            drones = list(ship.drones.all())
+    ship: Shipping = drone.shipping_set.filter(
+        end_date__gte=time_now, start_date__lte=time_now).first()
+    if ship is not None:
+        drones: List[Drone] = list(ship.drones.all())
+        for drone in drones:
             if drone in drones:
                 drone.state = ship.state
                 drone.save()

@@ -64,7 +64,7 @@ def change_states_drone_delivery_entity():
         for delivery in deliverys:
             change_delivery_state(delivery)
         serializer_drones = DroneSerializer(entity.drones, many=True)
-        serializer_deliverys = DroneSerializer(
+        serializer_deliverys = DeliveryReadSerializer(
             Delivery.objects.filter(entity=entity), many=True)
         return {"drones": serializer_drones.data, "deliverys": serializer_deliverys.data}
     return {"detail": "No have entity"}
