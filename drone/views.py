@@ -1,6 +1,6 @@
 from rest_framework import viewsets, mixins
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.parsers import MultiPartParser
+from rest_framework.parsers import MultiPartParser, FormParser
 from api.views import NestedSerializerMixin
 from drone.serializers import *
 from rest_framework.response import Response
@@ -22,7 +22,10 @@ class MedicationView(viewsets.ModelViewSet):
     serializer_class = MedicationSerializer
     permission_classes = (IsAuthenticated,)
     queryset = Medication.objects.all()
-    parser_classes = (MultiPartParser, )
+    parser_classes = (MultiPartParser, FormParser, )
+
+    def create(self, request, format=None, *args, **kwargs):
+        return super().create(request, format=None, *args, **kwargs)
 
 
 class EntityView(NestedSerializerMixin):

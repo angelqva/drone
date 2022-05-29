@@ -85,6 +85,16 @@ class DeliverySerializer(serializers.ModelSerializer):
         medications_delivery: List[Medication] = validated_data['medications']
         entity: Entity = validated_data['entity']
         medications_entity: List[Medication] = list(entity.medications.all())
+        deliverys = list(Delivery.objects.filter(entity=entity))
+        medications_deliverys: List[Medication] = []
+        for delivery in deliverys:
+            delivery: Delivery = delivery
+            meds = list(delivery.medications.all())
+            for m in meds:
+                medications_deliverys.append(m)
+        for med in medications_entity:
+            if med in medications_deliverys:
+                medications_entity.remove(med)
         medications_cant_dispatch: List[str] = []
         for medication in medications_delivery:
             medication: Medication = medication
@@ -94,16 +104,6 @@ class DeliverySerializer(serializers.ModelSerializer):
             detail = "Entity no have this medication(" + \
                 ', '.join(medications_cant_dispatch)+") to dispatch"
             raise serializers.ValidationError(detail=detail)
-        else:
-            medications_removed: List[Medication] = []
-            try:
-                for med in medications_delivery:
-                    entity.medications.remove(med)
-                    medications_removed.append(med)
-            except:
-                detail = "Cant delivery this medications"
-                entity.medications.add(*medications_removed)
-                raise serializers.ValidationError(detail=detail)
         return super().create(validated_data)
 
 
