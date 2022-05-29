@@ -5,13 +5,12 @@ import time
 
 session = requests.Session()
 auth = {
-    "username": "angel",
-    "password": "anapoles"
+    "username": "usuario",
+    "password": "Password*2022"
 }
 response = session.post('http://localhost:8000/api/login-token/', data=auth)
 data = response.json()
 token = "JWT "+data["access"]
-print(data)
 headers = {
     "Authorization": token
 }
@@ -22,7 +21,7 @@ customer = {
 }
 response = session.post(
     'http://localhost:8000/api/customers/', data=customer, headers=headers)
-print('Customer -> ', response)
+print('Customer -> ', response.text)
 drone_list = [
     {
         "serial_number": "d1",
@@ -97,10 +96,10 @@ drone_list = [
 ]
 
 for drone in drone_list:
-    time.sleep(1)
+
     response = session.post(
         'http://localhost:8000/api/drones/', data=drone, headers=headers)
-    print('Drone -> ', response)
+    print('Drone -> ', response.text)
 
 medications = [
     {
@@ -179,7 +178,7 @@ for med in medications:
     response = requests.request(
         "POST", 'http://localhost:8000/api/medications/',
         headers=headers, data=med["medication"], files=med["files"])
-    print(response)
+    print(response.text)
 
 
 entity = {
@@ -192,7 +191,7 @@ entity = {
     "name": "Entity",
     "zip_code": "33186"
 }
-time.sleep(1)
+
 response = session.post(
     'http://localhost:8000/api/entitys/',
     headers=headers,
@@ -222,10 +221,12 @@ deliverys = [
         ]
     }
 ]
-# for delivery in deliverys:
-response = session.post(
-    'http://localhost:8000/api/deliverys/',
-    headers=headers,
-    data=deliverys[0]
-)
-print('delivery -> ', response)
+for delivery in deliverys:
+    response = session.post(
+        'http://localhost:8000/api/deliverys/',
+        headers=headers,
+        data=delivery
+    )
+    print('delivery -> ', response.text)
+print("COPY TOKEN BELOW")
+print(data)
