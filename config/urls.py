@@ -12,10 +12,10 @@ schema_view = get_schema_view(
     openapi.Info(
         title="Drone APIREST",
         default_version='v1',
-        description="Django, djangorestframework",
+        description="Django, DjangoRestFramework, Celery, Redis, Postgres, SimpleJWT",
         terms_of_service="https://github.com/angelqva/drone",
         contact=openapi.Contact(email="anapolesnapoles@gmail.com"),
-        license=openapi.License(name="BSD License"),
+        license=openapi.License(name="MIT License"),
     ),
     public=True,
     permission_classes=[permissions.AllowAny],
