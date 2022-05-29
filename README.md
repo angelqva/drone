@@ -34,7 +34,7 @@ Create SuperUser
 python manage.py createsuperuser
 ```
 
-# Enter Data for example
+## Enter Data for example
 
 Username: usuario
 
@@ -44,7 +44,7 @@ Password: Password\*2022
 
 Password (again): Password\*2022
 
-# Execute example.py and copy token for enpoints
+## Execute example.py and copy token for enpoints
 
 ```bash
 python example.py
