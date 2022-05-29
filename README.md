@@ -4,11 +4,17 @@ APIREST for solve Drones problem
 
 ## Installation
 
-Clone this repository
+# Clone this repository
 
 ```bash
 git clone git@github.com:angelqva/drone.git
 ```
+
+# Necessary files
+
+Create Folder with name logs
+
+add file celery.log
 
 copy .env configuration on terminal
 
@@ -16,16 +22,18 @@ copy .env configuration on terminal
 copy .env.sample .env
 ```
 
-Build and Up Docker container
+# Build and Up Docker container
 
 ```bash
 docker-compose -f docker-compose.yml up -d --build
 ```
 
+# Create User and data sample
+
 Open python console on container
 
 ```bash
-docker exec -it drones_v1_django_app bash
+docker exec -it drones bash
 ```
 
 Create SuperUser
@@ -34,7 +42,7 @@ Create SuperUser
 python manage.py createsuperuser
 ```
 
-## Enter Data for example
+Enter this data
 
 Username: usuario
 
@@ -54,4 +62,4 @@ python example.py
 
 ## License
 
-[MIT](https://choosealicense.com/licenses/mit/)
+[BSD](https://choosealicense.com/licenses/bsd/)
