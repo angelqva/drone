@@ -10,23 +10,13 @@ APIREST for solve Drones problem
 git clone git@github.com:angelqva/drone.git
 ```
 
-# Necessary files
-
-Create Folder with name logs
-
-add file celery.log
-
-copy .env configuration on terminal
-
-```bash
-copy .env.sample .env
-```
-
 # Build and Up Docker container
 
 ```bash
-docker-compose -f docker-compose.yml up -d --build
+docker-compose up -d
 ```
+
+![alt text](https://github.com/angelqva/drone/blob/main/media/containers.png?raw=true)
 
 # Create User and data sample
 
@@ -58,7 +48,36 @@ Password (again): Password\*2022
 python example.py
 ```
 
-![alt text](https://github.com/angelqva/drone/blob/main/media/dash-02.jpg?raw=true)
+![alt text](https://github.com/angelqva/drone/blob/main/media/token.png?raw=true)
+
+## Open browser
+
+Navigate into this url to see all api endpoints to test and docs
+
+```bash
+http://localhost:8000/
+```
+
+![alt text](https://github.com/angelqva/drone/blob/main/media/docs.png?raw=true)
+
+## Login with simple jwt
+
+After copy token you can auth in:
+
+![alt text](https://github.com/angelqva/drone/blob/main/media/auth_token.png?raw=true)
+
+Or in endpoint login-token/ yo can put user and password before and get acces token
+add first JWT tkoen_access or Bearrer token_access
+
+Navigate into this url to see all tasks running and tracking
+
+```bash
+http://localhost:5555/
+```
+
+![alt text](https://github.com/angelqva/drone/blob/main/media/task-dashboard.png?raw=true)
+
+Thanks and Greetings!
 
 ## License
 
