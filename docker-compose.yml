@@ -50,7 +50,7 @@ services:
         environment:
             - DEBUG=1
             - PRODUCTION=0
-            - SECRET_KEY=django-insecure-7@^sc)4+m*=bvhkz++%#$l(db74h)u-4l4=7$v&c8bp%d2b-64
+            - SECRET_KEY='django-insecure-7@^sc)4+m*=bvhkz++%#$l(db74h)u-4l4=7$v&c8bp%d2b-64'
         command: celery -A config beat -l info
         depends_on:
             - db

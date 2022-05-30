@@ -13,7 +13,7 @@ class DroneView(viewsets.ModelViewSet):
     queryset = Drone.objects.all()
 
     @action(detail=True, methods=["get"])
-    def check_cargo(self):
+    def check_cargo(self, request, **kwargs):
         drone: Drone = self.get_object()
         time_now = timezone.now()
         ship: Shipping = drone.shipping_set.filter(
