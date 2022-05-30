@@ -30,12 +30,11 @@ class DroneView(viewsets.ModelViewSet):
                 result["medications"] = (MedicationSerializer(
                     ship.medications.all(), many=True)).data
                 result["helping to charge"] = True
-                result["helping to charge"] = True
             else:
                 result["drones"] = (DroneSerializer(ship.drones.first())).data
                 result["medications"] = (MedicationSerializer(
                     ship.medications.all(), many=True)).data
-                result["helping to charge"] = True
+                result["helping to charge"] = False
 
         return Response(result, status=status.HTTP_200_OK)
 

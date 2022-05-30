@@ -26,8 +26,9 @@ def processing_entity_delivery():
                     medications_to_processed.remove(m)
             if len(medications_to_processed) > 0:
                 inactives = get_entity_drones_can_dispatch(entity, distance)
-                make_ship_drone(inactives, medications_to_processed,
-                                delivery, distance)
+                if inactives is not None:
+                    make_ship_drone(inactives, medications_to_processed,
+                                    delivery, distance)
             else:
                 if delivery.state == 'Processing':
                     delivery.state = 'Processed'
