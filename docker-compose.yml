@@ -12,17 +12,15 @@ services:
         container_name: drones_db
 
     app:
-        build:
-            context: ./
-            dockerfile: Dockerfile
+        image: napolesqva/drones
         restart: always
+        environment:
+            - DEBUG=1
+            - PRODUCTION=0
+            - SECRET_KEY=django-insecure-7@^sc)4+m*=bvhkz++%#$l(db74h)u-4l4=7$v&c8bp%d2b-64
         command: python manage.py runserver 0.0.0.0:8000
-        volumes:
-            - ./:/usr/src/
         ports:
             - 8000:8000
-        env_file:
-            - ./.env
         depends_on:
             - db
         container_name: drones
@@ -35,13 +33,12 @@ services:
 
     celery_worker:
         restart: always
-        build:
-            context: ./
+        environment:
+            - DEBUG=1
+            - PRODUCTION=0
+            - SECRET_KEY=django-insecure-7@^sc)4+m*=bvhkz++%#$l(db74h)u-4l4=7$v&c8bp%d2b-64
+        image: napolesqva/drones
         command: celery -A config worker --loglevel=info --logfile=logs/celery.log
-        volumes:
-            - ./:/usr/src/
-        env_file:
-            - ./.env
         depends_on:
             - db
             - redis
@@ -49,12 +46,12 @@ services:
         container_name: drones_celery_worker
 
     celery-beat:
-        build: ./
+        image: napolesqva/drones
+        environment:
+            - DEBUG=1
+            - PRODUCTION=0
+            - SECRET_KEY=django-insecure-7@^sc)4+m*=bvhkz++%#$l(db74h)u-4l4=7$v&c8bp%d2b-64
         command: celery -A config beat -l info
-        volumes:
-            - ./:/usr/src/
-        env_file:
-            - ./.env
         depends_on:
             - db
             - redis
@@ -62,13 +59,14 @@ services:
         container_name: drones_celery_beat
 
     flower:
-        build:
-            context: ./
+        image: napolesqva/drones
+        environment:
+            - DEBUG=1
+            - PRODUCTION=0
+            - SECRET_KEY=django-insecure-7@^sc)4+m*=bvhkz++%#$l(db74h)u-4l4=7$v&c8bp%d2b-64
         command: celery -A config flower  --broker=redis://host.docker.internal:6379//
         ports:
             - 5555:5555
-        env_file:
-            - ./.env
         depends_on:
             - db
             - app

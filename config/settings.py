@@ -12,7 +12,7 @@ DEBUG = int(config("DEBUG", default=0))
 
 PRODUCTION = int(config("PRODUCTION", default=1))
 
-ALLOWED_HOSTS = config("DJANGO_ALLOWED_HOSTS").split(" ")
+ALLOWED_HOSTS = ['*']
 
 
 DATABASES = {
@@ -184,9 +184,9 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
 
-CELERY_BROKER_URL = "redis://redis:6379"
-CELERY_RESULT_BACKEND = "redis://redis:6379"
-if CELERY_RESULT_BACKEND == 'django-db':
+CELERY_BROKER_URL = "redis://drones_redis:6379"
+CELERY_RESULT_BACKEND = "redis://drones_redis:6379"
+if CELERY_RESULT_BACKEND == 'drones_db':
     INSTALLED_APPS += ['django_celery_results', ]
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_RESULT_SERIALIZER = 'json'

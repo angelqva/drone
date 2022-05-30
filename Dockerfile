@@ -9,8 +9,8 @@ RUN apt-get update && apt-get -y install netcat &&  apt-get -y install gettext
 WORKDIR /code
 COPY . ./
 
-RUN pip install -r /code/requirements.txt 
+RUN python -m pip install --upgrade pip
+RUN pip install -r /code/requirements.txt
 RUN chmod +x /code/entrypoint.sh
-RUN touch /code/logs/celery.log
 
 ENTRYPOINT ["/code/entrypoint.sh"]
