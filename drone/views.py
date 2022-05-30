@@ -25,8 +25,11 @@ class DroneView(viewsets.ModelViewSet):
         }
         if ship is not None:
             if ship.drones.count() > 1:
-                result["drones"] = list(ship.drones.all())
-                result["medications"] = list(ship.medications.all())
+                result["drones"] = (DroneSerializer(
+                    ship.drones.all(), many=True)).data
+                result["medications"] = (MedicationSerializer(
+                    ship.medications.all(), many=True)).data
+                result["helping to charge"] = True
                 result["helping to charge"] = True
             else:
                 result["drones"] = (DroneSerializer(ship.drones.first())).data
