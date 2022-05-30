@@ -1,5 +1,4 @@
 import requests
-import time
 # from PIL import Image, ImageDraw, ImageFont
 # from io import BytesIO
 
@@ -174,7 +173,6 @@ medications = [
     }
 ]
 for med in medications:
-    time.sleep(1)
     response = requests.request(
         "POST", 'http://localhost:8000/api/medications/',
         headers=headers, data=med["medication"], files=med["files"])
@@ -229,4 +227,4 @@ for delivery in deliverys:
     )
     print('delivery -> ', response.text)
 print("COPY TOKEN BELOW")
-print(data)
+print(token)
