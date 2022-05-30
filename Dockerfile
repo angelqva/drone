@@ -5,14 +5,12 @@ ENV PYTHONDONTWRITEBYTECODE 1
 
 RUN apt-get update && apt-get -y install netcat &&  apt-get -y install gettext
 
-RUN mkdir /code
-COPY . /code/
-WORKDIR /code
 
-RUN pip install --upgrade pip && \ 
-    pip install -r /code/requirements.txt && \
-    chmod +x /code/entrypoint.sh && \
-    touch /code/logs/celery.log && \
-    chmod +x /code/logs/celery.log
+WORKDIR /code
+COPY . ./
+
+RUN pip install -r /code/requirements.txt 
+RUN chmod +x /code/entrypoint.sh
+RUN touch /code/logs/celery.log
 
 ENTRYPOINT ["/code/entrypoint.sh"]
