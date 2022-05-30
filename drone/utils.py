@@ -140,9 +140,8 @@ def make_ship_drone(drones: List[Drone], medications: List[Medication],
                     drones.sort(key=lambda x: (x.weight))
                     rellena_capacidad = 0
                     list_drones: List[Drone] = []
-                    while rellena_capacidad < medication_h.weight:
-                        print('rellena_capacidad - >', rellena_capacidad)
-                        print('list_drones - >', list_drones)
+
+                    while rellena_capacidad < medication_h.weight and len(drones) > 0:
                         drone = drones.pop()
                         list_drones.append(drone)
                         rellena_capacidad += drone.weight
